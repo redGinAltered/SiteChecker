@@ -13,16 +13,14 @@ import java.util.List;
 @Service
 public class SiteChecker {
 
-//
-//    @Value("${check.date}")
-//    private Date date;
 
     @Autowired
     private SiteRepo siteRepo;
 
-    public void CheckAllSites(String[] args) throws IOException {
+    private Date date;
 
-        Date date;
+
+    public void checkAllSites(String[] args) {
 
         if(args.length>0){
             date = Date.valueOf(args[0]);
@@ -30,25 +28,45 @@ public class SiteChecker {
             date = Date.valueOf(LocalDate.now());
         }
 
-        List<Site> sites = siteRepo.findAll();//
+        List<Site> sites = siteRepo.findAll(); //only with certain date
 
         for (Site s: sites){
 
-            URL url = new URL(s.getUrl());
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.connect();
-            int responseCode = connection.getResponseCode();
+            if(s.getUrl() == null){
+                System.out.println("ID = "+s.getId()+" -> url is null");
+                continue;
+            }
 
             if(s.getLastCheck() == null || s.getLastCheck().compareTo(date) == -1){
-                s.setStatus(responseCode);
-                s.setLastCheck(date);
-                System.out.println(responseCode);
-                siteRepo.save(s);
+
+                Thread thread = new Thread(()-> {
+
+                        try {
+                            checkSite(s);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                });
+                thread.start();
             }
-            connection.disconnect();
-
-
         }
 
+    }
+
+    private void checkSite(Site s) throws IOException{
+
+
+        URL url = new URL(s.getUrl());
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.connect();
+
+        int responseCode = connection.getResponseCode();
+        System.out.println(responseCode);
+        s.setStatus(responseCode);
+        s.setLastCheck(date);
+        siteRepo.save(s);
+
+
+        connection.disconnect();
     }
 }
