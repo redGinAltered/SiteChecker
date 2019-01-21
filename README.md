@@ -1,4 +1,6 @@
 # SiteChecker
+# yes, I know about some unhandled exceptions, i'll fix it later
+
 Simple http response code checker (yeah, i know that use spting boot for desktop app its a stupiest thing) 
 
 1. Clone it to your pc
